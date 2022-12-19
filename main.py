@@ -5,8 +5,6 @@ import math
 import matplotlib.pyplot as plt
 import seaborn as sns; sns.set()
 
-
-
 class Field:
     def __init__(self, size):
         self.__matrix = []
@@ -21,22 +19,15 @@ class Field:
         self.__matrix = [0] * self.__size
         for i in range(self.__size):
             self.__matrix[i] = [0] * self.__size
-    def print(self):
-        for i in range(len(self.__matrix)):
-            for j in range(0, len(self.__matrix[i])):
-                print(self.__matrix[i][j], end=' ')
-            print()
-    def count_elements(self):
-        count = 0
-        for element in self.__matrix:
-            count += len(element)
-        return(count)
+            for j in range(self.__size):
+                self.__matrix[i][j] = [0] * self.__size
     def count_ones(self):
         count = 0
-        for i in range(0, len(self.__matrix)):
-            for j in range(0, len(self.__matrix[i])):
-                if self.__matrix[i][j] == 1:
-                    count += 1
+        for x in range(0, self.__size):
+            for y in range(0, self.__size):
+                for z in range(0, self.__size):
+                    if self.__matrix[x][y][z] == 1:
+                        count += 1
         return(count)
 
 class Controller:
@@ -50,35 +41,75 @@ class Controller:
     def thick(self):
         return self.__thick
     def count_porosity(self, matrix):
-        return(1-matrix.count_ones()/matrix.count_elements())
-    def create_fiber(self, size):
-        seed = random.randint(1, 2)
-        if seed == 1:
-            point = np.asfortranarray([[0, random.randint(0, size-1)], [random.randint(0, size-1), random.randint(0, size-1)],
-                                       [random.randint(0, size-1), random.randint(0, size-1)], [size-1, random.randint(0, size-1)]])
-        else:
-            point = np.asfortranarray([[random.randint(0, size-1), 0], [random.randint(0, size-1), random.randint(0, size-1)],
-                                       [random.randint(0, size-1), random.randint(0, size-1)], [random.randint(0, size-1), size-1]])
+        return(1-matrix.count_ones()/matrix.size**3)
+    def create_bezier_curve(self, point, size):
         curve = bezier.curve.Curve(point, degree=3)
-        s_vals = np.linspace(0, 1.0, size*3)
+        s_vals = np.linspace(0, 1.0, size * 3)
         array = curve.evaluate_multi(s_vals)
         curve_point = []
-        for i in range(0, len(array)):
-            for j in range(0, len(array[i])):
-                curve_point.append(round(array[i][j]))
+        for x in range(0, len(array)):
+            for y in range(0, len(array[x])):
+                curve_point.append(math.ceil((array[x][y])))
         return (curve_point)
-    def update(self, matrix, curve_point):
-        for i in range(0, len(curve_point), 2):
-            matrix.matrix[curve_point[i]][curve_point[i + 1]] = 1
-            self.create_thickness(matrix, curve_point[i], curve_point[i+1], self.__thick)
-    def create_thickness(self, matrix, cx, cy, thick):
+    def create_fiber(self, size, matrix):
+        seed = random.randint(1, 3)
+        if seed == 1:
+            point = np.asfortranarray([[0, random.randint(0, size - 1), random.randint(0, size - 1)],
+                                       [random.randint(0, size - 1), random.randint(0, size - 1), random.randint(0, size - 1)],
+                                       [random.randint(0, size - 1), random.randint(0, size - 1), random.randint(0, size - 1)],
+                                       [size - 1, random.randint(0, size - 1), random.randint(0, size - 1)]])
+            curve_point = self.create_bezier_curve(point, size)
+            for i in range(0, len(curve_point), 3):
+                matrix.matrix[curve_point[i]][curve_point[i + 1]][curve_point[i + 2]] = 1
+                self.create_thickness(matrix, curve_point[i+1], curve_point[i + 2], curve_point[i], self.__thick)
+                for x in range (0,len(point_x),2):
+                    matrix.matrix[curve_point[i]][point_x[x]][point_x[x+1]] = 1
+        elif seed == 2:
+            point = np.asfortranarray([[random.randint(0, size - 1), 0, random.randint(0, size - 1)],
+                                       [random.randint(0, size - 1), random.randint(0, size - 1), random.randint(0, size - 1)],
+                                       [random.randint(0, size - 1), random.randint(0, size - 1), random.randint(0, size - 1)],
+                                       [random.randint(0, size - 1), size-1, random.randint(0, size - 1)]])
+            curve_point = self.create_bezier_curve(point, size)
+            for i in range(0, len(curve_point), 3):
+                matrix.matrix[curve_point[i]][curve_point[i + 1]][curve_point[i + 2]] = 1
+                self.create_thickness(matrix, curve_point[i], curve_point[i + 2], curve_point[i+1], self.__thick)
+                for x in range (0,len(point_x),2):
+                    matrix.matrix[point_x[x]][curve_point[i+1]][point_x[x+1]] = 1
+        else:
+            point = np.asfortranarray([[random.randint(0, size - 1), random.randint(0, size - 1), 0],
+                                       [random.randint(0, size - 1), random.randint(0, size - 1), random.randint(0, size - 1)],
+                                       [random.randint(0, size - 1), random.randint(0, size - 1), random.randint(0, size - 1)],
+                                       [random.randint(0, size - 1), random.randint(0, size - 1), size - 1]])
+            curve_point = self.create_bezier_curve(point, size)
+            for i in range(0, len(curve_point), 3):
+                matrix.matrix[curve_point[i]][curve_point[i + 1]][curve_point[i + 2]] = 1
+                self.create_thickness(matrix, curve_point[i+1], curve_point[i], curve_point[i + 2], self.__thick)
+                for x in range (0,len(point_x),2):
+                    matrix.matrix[point_x[x]][point_x[x+1]][curve_point[i + 2]] = 1
+
+    def create_xyz(self, matrix):
+        global x,y,z
+        x = []
+        y = []
+        z = []
+        for i in range(0, matrix.size):
+            for j in range(0, matrix.size):
+                for k in range(0, matrix.size):
+                    if matrix.matrix[i][j][k] == 1:
+                        x.append(i)
+                        y.append(j)
+                        z.append(k)
+    def create_thickness(self, matrix, cx, cy, cz, thick):
+        global point_x
+        point_x = []
         for x in range(cx - thick, cx + thick):
             for y in range(cy - thick, cy + thick):
                 if x < matrix.size and y < matrix.size and x >= 0 and y >= 0:
                     if math.sqrt((cx - x) ** 2 + (cy - y) ** 2) <= thick:
-                        matrix.matrix[x][y] = 1
+                        point_x.append(x)
+                        point_x.append(y)
     def check_porosity(self, matrix):
-        if self.count_porosity(matrix) <= self.__required_porosity:
+        if self.count_porosity(matrix) < self.__required_porosity:
             return(True)
 
 def main():
@@ -89,10 +120,12 @@ def main():
     thick = round(float(input('Введите диаметр волокна, нм: '))/4)
     controller = Controller(required_porosity, thick)
     while True:
-        controller.update(field, controller.create_fiber(field.size))
+        controller.create_fiber(field.size, field)
         if controller.check_porosity(field) == True:
             break
-    #field.print()
-    plt.pcolormesh(field.matrix, cmap = "copper")
+    controller.create_xyz(field)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(x, y, z, edgecolors='black')
     plt.show()
 main()
