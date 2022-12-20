@@ -125,5 +125,6 @@ def main():
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
     ax.scatter(x, y, z, edgecolors='black')
+    plt.axis('off')
     plt.show()
 main()
