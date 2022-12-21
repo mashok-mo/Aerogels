@@ -124,7 +124,7 @@ def main():
     controller.create_xyz(field)
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
-    ax.scatter(x, y, z, edgecolors='black')
+    ax.scatter(x, y, z, c = '#2af7ed', edgecolors='black')
     plt.axis('off')
     plt.show()
 main()
